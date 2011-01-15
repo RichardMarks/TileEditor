@@ -1,7 +1,9 @@
 package 
 {
+	import flash.display.BitmapData;
 	import flash.display.Sprite;
 	import flash.events.Event;
+	import flash.geom.Rectangle;
 
 	/**
 	 * TileEditor version 0.0.9a
@@ -62,11 +64,41 @@ package
 		static public const EDITACT_ROTATE_IMAGE:Number = 18;
 		static public const EDITACT_BLUR_IMAGE:Number = 19;
 		static public const EDITACT_SCATTER_IMAGE:Number = 20;
-
 		
 		
+		// globals
 		
+		// bitmaps
+		static public var tileImage:BitmapData;
+		static public var paletteImage:BitmapData;
+		static public var realTileImage:BitmapData;
+		static public var gridImage:BitmapData;
+		static public var clipboardImage:BitmapData;
+		static public var xorPixel:BitmapData;
 		
+		// areas
+		static public var uiCloseButtonRect:Rectangle = new Rectangle(DEFAULT_SCREEN_WIDTH - 24, 8, 16, 16);
+		static public var uiFilenameRect:Rectangle = new Rectangle(8, 8, uiCloseButtonRect.x - uiCloseButtonRect.width, uiCloseButtonRect.height);
+		static public var tileEditPanelRect:Rectangle = new Rectangle(8, 32, TILESZ * GRIDRES, TILESZ * GRIDRES);
+		static public var paletteBlockSize:Number = Math.floor(tileEditPanelRect.width / 32);
+		static public var palettePanelRect:Rectangle = new Rectangle(8, 8 + tileEditPanelRect.y + tileEditPanelRect.height, 32 * paletteBlockSize, 8 * paletteBlockSize);
+		static public var zoomTileRect:Rectangle = new Rectangle(8 + tileEditPanelRect.x + tileEditPanelRect.width, tileEditPanelRect.y, TILESZ * ZOOM, TILESZ * ZOOM);
+		static public var clipboardTileRect:Rectangle = new Rectangle(8 + zoomTileRect.x + zoomTileRect.width, tileEditPanelRect.y, TILESZ * ZOOM, TILESZ * ZOOM);
+		static public var infoPanelRect:Rectangle = new Rectangle(zoomTileRect.x, 8 + zoomTileRect.y + zoomTileRect.height, DEFAULT_SCREEN_WIDTH - (zoomTileRect.x + 8), 128);
+		static public var uiTranspButtonRect:Rectangle = new Rectangle(DEFAULT_SCREEN_WIDTH - 24, DEFAULT_SCREEN_HEIGHT - 24, 16, 16);
+		static public var uiStatusBarRect:Rectangle = new Rectangle(8, DEFAULT_SCREEN_HEIGHT - 24, uiTranspButtonRect.x - uiTranspButtonRect.width, uiTranspButtonRect.height);
+		
+		// tile data array
+		static public var tileData:Vector.<Number> = new Vector.<Number>((TILESZ + (TILESZ * TILESZ)));
+		
+		// misc colors
+		static public var drawColor:Number = 15;
+		static public var gridColor:Number = 15;
+		static public var hudColor:Number = HUD_OPAQUE_MODE;
+		
+		// mode toggles
+		static public var showGrid:Number = 1;
+		static public var opaqueDrawing:Number = 1;
 		
 		public function Main():void 
 		{
