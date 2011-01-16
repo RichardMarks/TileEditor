@@ -7,7 +7,9 @@ package
 	import flash.events.Event;
 	import flash.events.KeyboardEvent;
 	import flash.events.MouseEvent;
+	import flash.geom.Point;
 	import flash.geom.Rectangle;
+	import net.flashpunk.utils.Key;
 
 	/**
 	 * TileEditor version 0.0.9a
@@ -148,9 +150,414 @@ package
 			addChild(new Bitmap(backBuffer, PixelSnapping.NEVER));
 		}
 		
+		private function OnKeyDown(e:KeyboardEvent):void 
+		{
+			// handle keyboard input
+			
+			switch (e.keyCode)
+			{
+				case Key.F8: { DoEditorAction(EDITACT_PREVIEW_MODE); } break;
+				
+				case Key.LEFT: 
+				{ 
+					if (e.ctrlKey) { DoEditorAction(EDITACT_SHIFT_PIXELS_LEFT); } 
+					else if (e.shiftKey) { DoEditorAction(EDITACT_MIRROR_IMAGE); }
+				} break;
+				
+				case Key.RIGHT: 
+				{ 
+					if (e.ctrlKey) { DoEditorAction(EDITACT_SHIFT_PIXELS_RIGHT); } 
+					else if (e.shiftKey) { DoEditorAction(EDITACT_MIRROR_IMAGE); }
+				} break;
+				
+				case Key.UP: 
+				{ 
+					if (e.ctrlKey) { DoEditorAction(EDITACT_SHIFT_PIXELS_UP); } 
+					else if (e.shiftKey) { DoEditorAction(EDITACT_FLIP_IMAGE); }
+				} break;
+				
+				case Key.DOWN: 
+				{ 
+					if (e.ctrlKey) { DoEditorAction(EDITACT_SHIFT_PIXELS_DOWN); } 
+					else if (e.shiftKey) { DoEditorAction(EDITACT_FLIP_IMAGE); }
+				} break;
+				
+				case Key.C: { if (e.ctrlKey) { DoEditorAction(EDITACT_COPY_IMAGE); } } break;
+				case Key.V: { if (e.ctrlKey) { DoEditorAction(EDITACT_PASTE_IMAGE); } } break;
+				
+				case Key.T: { DoEditorAction(EDITACT_TOGGLE_OPAQUE_MODE); } break;
+				case Key.F: { DoEditorAction(EDITACT_FILL_IMAGE); } break;
+				case Key.G: { DoEditorAction(EDITACT_TOGGLE_GRID); } break;
+				case Key.N: { DoEditorAction(EDITACT_CLEAR_IMAGE); } break;
+				case Key.S: { DoEditorAction(EDITACT_SAVE_IMAGE); } break;
+				case Key.L: { DoEditorAction(EDITACT_LOAD_IMAGE); } break;
+				case Key.R: { DoEditorAction(EDITACT_RANDOM_FILL_IMAGE); } break;
+				
+				case Key.TILDE: { DoEditorAction(EDITACT_ROTATE_IMAGE); } break;
+				case Key.DIGIT_1: { DoEditorAction(EDITACT_BLUR_IMAGE); } break;
+				case Key.DIGIT_2: { DoEditorAction(EDITACT_SCATTER_IMAGE); } break;
+				
+				default:break;
+			}
+		}
+		
+		private function OnKeyUp(e:KeyboardEvent):void 
+		{ 
+		}
+		
+		private function OnMouseClick(e:MouseEvent):void 
+		{ 
+			//trace("mouse click at", e.stageX, ",", e.stageY);
+			
+			// handle mouse input
+			var mouseX:Number = e.stageX;
+			var mouseY:Number = e.stageY;
+			
+			// tile editor panel
+			if (tileEditPanelRect.contains(mouseX, mouseY))
+			{
+				if (e.altKey) { DoEditorAction(EDITACT_ERASE_PIXEL); }
+				else { DoEditorAction(EDITACT_DRAW_PIXEL); }
+			}
+			// color palette panel
+			else if (palettePanelRect.contains(mouseX, mouseY))
+			{
+				drawColor = paletteImage.getPixel32(mouseX - palettePanelRect.x, mouseY - palettePanelRect.y);
+			}
+			// close button
+			else if (uiCloseButtonRect.contains(mouseX, mouseY))
+			{
+				// do nothing for now
+			}
+			// toggle transparent mode
+			else if (uiTranspButtonRect.contains(mouseX, mouseY))
+			{
+				DoEditorAction(EDITACT_TOGGLE_OPAQUE_MODE);
+			}
+		}
+		
 		private function MainLoop(e:Event):void
 		{
+			// render
+			
+			AL.clear_bitmap(backBuffer);
+			
+			// draw clipboard buffer
+			backBuffer.copyPixels(clipboardImage, clipboardImage.rect, new Point(clipboardTileRect.x, clipboardTileRect.y));
+			//stretch_blit(clipboardimage, doublebuffer, 0, 0, clipboardimage->w, clipboardimage->h, clipboard_tile_rect[0], clipboard_tile_rect[1], clipboard_tile_rect[4], clipboard_tile_rect[5]);
+		
+			// draw zoomed tile
+			backBuffer.copyPixels(realTileImage, realTileImage.rect, new Point(zoomTileRect.x, zoomTileRect.y));
+			// stretch_blit(realtileimage, doublebuffer, 0, 0, realtileimage->w, realtileimage->h, zoom_tile_rect[0], zoom_tile_rect[1], zoom_tile_rect[4], zoom_tile_rect[5]);
+		
+			// draw edited tile
+			backBuffer.copyPixels(tileImage, tileImage.rect, new Point(tileEditPanelRect.x, tileEditPanelRect.y));
+			//blit(tileimage, doublebuffer, 0, 0, tile_edit_panel_rect[0], tile_edit_panel_rect[1], tileimage->w, tileimage->h);
+		
+			// draw palette
+			backBuffer.copyPixels(paletteImage, paletteImage.rect, new Point(palettePanelRect.x, palettePanelRect.y));
+			//blit(paletteimage, doublebuffer, 0, 0, palette_panel_rect[0], palette_panel_rect[1], paletteimage->w, paletteimage->h);
+		
+			// draw grid
+			if (showGrid)
+			{
+				backBuffer.copyPixels(gridImage, gridImage.rect, new Point(tileEditPanelRect.x, tileEditPanelRect.y));
+			}
+			
+			/*
+		// draw hud (the frames that go around every panel
+		
+		ui_draw_frame(tile_edit_panel_rect);
+		//rect(doublebuffer, tile_edit_panel_rect[0], tile_edit_panel_rect[1], tile_edit_panel_rect[2], tile_edit_panel_rect[3], hud_color);
+		
+		ui_draw_frame(palette_panel_rect);
+		//rect(doublebuffer, palette_panel_rect[0], palette_panel_rect[1], palette_panel_rect[2], palette_panel_rect[3], hud_color);
+		
+		ui_draw_frame(zoom_tile_rect);
+		//rect(doublebuffer, zoom_tile_rect[0], zoom_tile_rect[1], zoom_tile_rect[2], zoom_tile_rect[3], hud_color);
+		
+		ui_draw_frame(clipboard_tile_rect);
+		//rect(doublebuffer, clipboard_tile_rect[0], clipboard_tile_rect[1], clipboard_tile_rect[2], clipboard_tile_rect[3], hud_color);
+		
+		ui_draw_frame(info_panel_rect);
+		//rect(doublebuffer, info_panel_rect[0], info_panel_rect[1], info_panel_rect[2], info_panel_rect[3], hud_color);
+		
+		ui_draw_frame(ui_close_button_rect);
+		textprintf_ex(doublebuffer, font, ui_close_button_rect[0] + 5, ui_close_button_rect[1] + 5, makecol(255,0,0), -1, "X");
+		
+		ui_draw_frame(ui_filename_rect);
+		textprintf_ex(doublebuffer, font, ui_filename_rect[0] + 4, ui_filename_rect[1] + 4, makecol(255,255,255), -1, "Editing: %s", name_of_file_being_edited);
+		
+		
+		
+		
+		ui_draw_frame(ui_transp_button_rect);
+		ui_draw_frame(ui_status_bar_rect);
+		textprintf_ex(doublebuffer, font, ui_transp_button_rect[0] + 5, ui_transp_button_rect[1] + 5, hud_color, -1, (opaque_drawing==1)?"T":"O");
+
+		
+		
+		
+		
+		// draw the status bar
+		{
+			int x = ui_status_bar_rect[0] + 4;
+			int y = ui_status_bar_rect[1] + 4;
+			
+			if (ptinrect(mouse_x, mouse_y, tile_edit_panel_rect))
+			{
+				int mousex = mouse_x - tile_edit_panel_rect[0];
+				int mousey = mouse_y - tile_edit_panel_rect[1];
+				int mx = (int)mousex / GRIDRES;
+				int my = (int)mousey / GRIDRES;
+				
+				int p_color = getpixel(realtileimage, mx, my);
+				
+				//textprintf_ex(doublebuffer, font, x, y, makecol(255,255,255), -1, " X %02d Y %02d   Drawing Color %03d   Pixel Color %03d", mx, my, draw_color, getpixel(realtileimage, mx, my));
+				textprintf_ex(doublebuffer, font, x, y, makecol(255,255,255), -1, " X %02d Y %02d   Drawing Color %03d RGB(%03d, %03d, %03d)   Pixel Color %03d RGB(%03d, %03d, %03d)", mx, my, 
+				draw_color, getr(draw_color), getg(draw_color), getb(draw_color), 
+				p_color, getr(p_color), getg(p_color), getb(p_color));
+			}
+			else if (ptinrect(mouse_x, mouse_y, palette_panel_rect))
+			{
+				// mouse is over the color palette panel
+				int p_color = getpixel(paletteimage, mouse_x-palette_panel_rect[0], mouse_y-palette_panel_rect[1]);
+				textprintf_ex(doublebuffer, font, x, y, makecol(255,255,255), -1, " Click the Left Mouse Button to Select Palette Value %03d RGB(%03d, %03d, %03d)", p_color, getr(p_color), getg(p_color), getb(p_color));
+			}
+			else if (ptinrect(mouse_x, mouse_y, ui_transp_button_rect))
+			{
+				textprintf_ex(doublebuffer, font, x, y, makecol(255,255,255), -1, " Click the Left Mouse Button to Select %s Drawing Mode", (opaque_drawing==1)?"Transparent":"Opaque");
+			}
+			else if (ptinrect(mouse_x, mouse_y, ui_close_button_rect))
+			{
+				textprintf_ex(doublebuffer, font, x, y, makecol(255,255,255), -1, " Click the Left Mouse Button to Close the program. Unsaved changes will be lost!");
+			}
 			
 		}
+		
+		
+		rect(doublebuffer, 0, 0, SCREEN_WIDTH-1, SCREEN_HEIGHT-1, hud_color);
+			*/
+		}
+		
+		// functions
+		
+		private function SetTileData(x:uint, y:uint, value:uint):void
+		{
+			tileData[x + (y * TILESZ)] = value;
+		}
+		
+		private function GetTileData(x:uint, y:uint):uint
+		{
+			return tileData[x + (y * TILESZ)];
+		}
+		
+		private function RedrawTheGrid(b:BitmapData):void
+		{
+			for (var i:Number = 0; i < TILESZ; i++)
+			{
+				AL.line(b, 0, i * GRIDRES, b.width, i * GRIDRES, gridColor);
+				AL.line(b, i * GRIDRES, 0, i * GRIDRES, b.height, gridColor);
+			}
+		}
+		
+		private function RedrawTheTile(b:BitmapData):void
+		{
+			var rect:Rectangle = new Rectangle;
+			rect.width = GRIDRES;
+			rect.height = GRIDRES;
+			for (var y:Number = 0; y < TILESZ; y++)
+			{
+				rect.y = y * GRIDRES;
+				for (var x:Number = 0; x < TILESZ; x++)
+				{
+					rect.x = x * GRIDRES;
+					var pixelColor:uint = GetTileData(x, y);
+					b.fillRect(rect, pixelColor);
+					if (!opaqueDrawing && pixelColor == 0)
+					{
+						b.copyPixels(xorPixel, xorPixel.rect, new Point(rect.x, rect.y));
+					}
+				}
+			}
+		}
+		
+		private function RedrawThePalette(b:BitmapData):void
+		{
+			var rect:Rectangle = new Rectangle;
+			var palY:Number = 0;
+			var y:Number = 0;
+			for (var n:Number = 0; n < 8; n++)
+			{
+				for (var x:Number = 0; x < 32; x++)
+				{
+					var color:Number = AL.PALETTE256[x + (palY * 32)];
+					
+					rect.x = x * paletteBlockSize;
+					rect.y = y;
+					rect.width = paletteBlockSize;
+					rect.height = paletteBlockSize;
+					
+					b.fillRect(rect, color);
+					if (drawColor == color)
+					{
+						AL.rect(b, rect.x, y, rect.x + rect.width - 1, rect.height - 1, AL.PALETTE256[0]);
+					}
+				}
+				y += paletteBlockSize;
+				palY++;
+			}
+		}
+		
+		private function SynchronizeEditorWithTile():void
+		{
+			for (var y:Number = 0; y < realTileImage.height; y++)
+			{
+				for (var x:Number = 0; x < realTileImage.width; x++)
+				{
+					var pixelColor:uint = realTileImage.getPixel32(x, y);
+					SetTileData(x, y, pixelColor);
+				}
+			}
+			RedrawTheTile(tileImage);
+		}
+		
+		private function ToolShiftPixelsLeft():void
+		{
+			/* 
+			[0][1][2][3][4][5]    [1][2][3][4][5][0]
+			[a][b][c][d][e][f] to [b][c][d][e][f][a] 
+			*/
+			for (var y:Number = 0; y < TILESZ; y++)
+			{
+				var t:uint = realTileImage.getPixel32(0, y);
+				for (var x:Number = 0; x < TILESZ - 1; x++)
+				{
+					realTileImage.setPixel32(x, y, realTileImage.getPixel32(x + 1, y));
+				}
+				realTileImage.setPixel32(TILESZ - 1, y, t);
+			}
+			SynchronizeEditorWithTile();
+		}
+		
+		private function ToolShiftPixelsRight():void
+		{
+			/*
+			[0][1][2][3][4][5]    [5][0][1][2][3][4]
+			[a][b][c][d][e][f] to [f][a][b][c][d][e]
+			*/
+			for (var y:Number = 0; y < TILESZ; y++)
+			{
+				var t:uint = realTileImage.getPixel32(TILESZ - 1, y);
+				for (var x:Number = TILESZ - 1; x > 0; x--)
+				{
+					realTileImage.setPixel32(x, y, realTileImage.getPixel32(x - 1, y));
+				}
+				realTileImage.setPixel32(0, y, t);
+			}
+			SynchronizeEditorWithTile();
+		}
+		
+		private function ToolShiftPixelsUp():void
+		{
+			/*
+			[a][0]    [b][1]
+			[b][1]    [c][2]
+			[c][2] to [d][3]
+			[d][3]    [e][4]
+			[e][4]    [f][5]
+			[f][5]    [a][0]
+			*/
+			for (var x:Number = 0; x < TILESZ; x++)
+			{
+				var t:uint = realTileImage.getPixel32(x, 0);
+				for (var y:Number = 0; y < TILESZ - 1; y++)
+				{
+					realTileImage.setPixel32(x, y, realTileImage.getPixel32(x, y + 1));
+				}
+				realTileImage.setPixel32(x, TILESZ - 1, t);
+			}
+			SynchronizeEditorWithTile();
+		}
+		
+		private function ToolShiftPixelsDown():void
+		{
+			/*
+			[a][0]    [f][5]
+			[b][1]    [a][0]
+			[c][2] to [b][1]
+			[d][3]    [c][2]
+			[e][4]    [d][3]
+			[f][5]    [e][4]
+			*/
+			for (var x:Number = 0; x < TILESZ; x++)
+			{
+				var t:uint = realTileImage.getPixel32(x, TILESZ - 1);
+				for (var y:Number = TILESZ - 1; y > 0; y--)
+				{
+					realTileImage.setPixel32(x, y, realTileImage.getPixel32(x, y - 1));
+				}
+				realTileImage.setPixel32(x, 0, t);
+			}
+			SynchronizeEditorWithTile();
+		}
+		
+		private function DoEditorAction(action:Number):void 
+		{
+			// no action specified, just exit now
+			if (action < 0) { return; }
+			
+			switch(action)
+			{
+				case EDITACT_DRAW_PIXEL: { EditActDrawPixel(); } break;
+				case EDITACT_ERASE_PIXEL: { EditActErasePixel(); } break;
+				case EDITACT_CLEAR_IMAGE: { EditActClearImage(); } break;
+				case EDITACT_FILL_IMAGE: { EditActFillImage(); } break;
+				case EDITACT_LOAD_IMAGE: { EditActLoadImage(); } break;
+				case EDITACT_SAVE_IMAGE: { EditActSaveImage(); } break;
+				case EDITACT_TOGGLE_GRID: { EditActToggleGrid(); } break;
+				case EDITACT_TOGGLE_OPAQUE_MODE: { EditActToggleOpaqueMode(); } break;
+				case EDITACT_SHIFT_PIXELS_UP: { EditActShiftPixelsUp(); } break;
+				case EDITACT_SHIFT_PIXELS_DOWN: { EditActShiftPixelsDown(); } break;
+				case EDITACT_SHIFT_PIXELS_LEFT: { EditActShiftPixelsLeft(); } break;
+				case EDITACT_SHIFT_PIXELS_RIGHT: { EditActShiftPixelsRight(); } break;
+				case EDITACT_COPY_IMAGE: { EditActCopyImage(); } break;
+				case EDITACT_PASTE_IMAGE: { EditActPasteImage(); } break;
+				case EDITACT_PREVIEW_MODE: { EditActPreviewMode(); } break;
+				case EDITACT_RANDOM_FILL_IMAGE: { EditActRandomFillImage(); } break;
+				case EDITACT_FLIP_IMAGE: { EditActFlipImage(); } break;
+				case EDITACT_MIRROR_IMAGE: { EditActMirrorImage(); } break;
+				case EDITACT_ROTATE_IMAGE: { EditActRotateImage(); } break;
+				case EDITACT_BLUR_IMAGE: { EditActBlurImage(); } break;
+				case EDITACT_SCATTER_IMAGE: { EditActScatterImage(); } break;
+				default:
+				{
+					throw new Error("Unknown action: " + action);
+				} break;
+			}
+		}
+		
+		private function EditActDrawPixel():void { }
+		private function EditActErasePixel():void { }
+		private function EditActClearImage():void { }
+		private function EditActFillImage():void { }
+		private function EditActLoadImage():void { }
+		private function EditActSaveImage():void { }
+		private function EditActToggleGrid():void { }
+		private function EditActToggleOpaqueMode():void { }
+		private function EditActShiftPixelsUp():void { }
+		private function EditActShiftPixelsDown():void { }
+		private function EditActShiftPixelsLeft():void { }
+		private function EditActShiftPixelsRight():void { }
+		private function EditActCopyImage():void { }
+		private function EditActPasteImage():void { }
+		private function EditActPreviewMode():void { }
+		private function EditActRandomFillImage():void { }
+		private function EditActFlipImage():void { }
+		private function EditActMirrorImage():void { }
+		private function EditActRotateImage():void { }
+		private function EditActBlurImage():void { }
+		private function EditActScatterImage():void { }
+		
 	}
 }
