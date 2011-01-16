@@ -1,8 +1,12 @@
 package 
 {
+	import flash.display.Bitmap;
 	import flash.display.BitmapData;
+	import flash.display.PixelSnapping;
 	import flash.display.Sprite;
 	import flash.events.Event;
+	import flash.events.KeyboardEvent;
+	import flash.events.MouseEvent;
 	import flash.geom.Rectangle;
 
 	/**
@@ -69,6 +73,7 @@ package
 		// globals
 		
 		// bitmaps
+		static public var backBuffer:BitmapData;
 		static public var tileImage:BitmapData;
 		static public var paletteImage:BitmapData;
 		static public var realTileImage:BitmapData;
@@ -105,13 +110,47 @@ package
 			if (stage) init();
 			else addEventListener(Event.ADDED_TO_STAGE, init);
 		}
-
+		
 		private function init(e:Event = null):void 
 		{
 			removeEventListener(Event.ADDED_TO_STAGE, init);
 			// entry point
+			
+			// create bitmap buffers
+			backBuffer = new BitmapData(DEFAULT_SCREEN_WIDTH, DEFAULT_SCREEN_HEIGHT, true, 0xFF000000);
+			realTileImage = new BitmapData(TILESZ, TILESZ, true, 0xFF000000);
+			tileImage = new BitmapData(tileEditPanelRect.width, tileEditPanelRect.height, true, 0xFF000000);
+			paletteImage = new BitmapData(palettePanelRect.width, palettePanelRect.height, true, 0xFF000000);
+			gridImage = new BitmapData(tileImage.width, tileImage.height, true, 0xFF000000);
+			clipboardImage = new BitmapData(TILESZ, TILESZ, true, 0xFF000000);
+			xorPixel = new BitmapData(GRIDRES, GRIDRES, true, 0xFF000000);
+			
+			// draw the xorpixel texture
+			for (var x:Number = 0; x < xorPixel.width; x++)
+			{
+				for (var y:Number = 0; y < xorPixel.height; y++)
+				{
+					var c:uint = 8 * (x ^ y);
+					xorPixel.setPixel(x, y, AL.makecol(c, c, c));
+				}
+			}
+			
+			// draw the panels
+			RedrawTheTile(tileImage);
+			RedrawThePalette(paletteImage);
+			RedrawTheGrid(gridImage);
+			
+			addEventListener(Event.ENTER_FRAME, MainLoop);
+			addEventListener(KeyboardEvent.KEY_DOWN, OnKeyDown);
+			addEventListener(KeyboardEvent.KEY_UP, OnKeyUp);
+			addEventListener(MouseEvent.CLICK, OnMouseClick);
+			
+			addChild(new Bitmap(backBuffer, PixelSnapping.NEVER));
 		}
-
+		
+		private function MainLoop(e:Event):void
+		{
+			
+		}
 	}
-
 }
