@@ -537,27 +537,392 @@ package
 			}
 		}
 		
-		private function EditActDrawPixel():void { }
-		private function EditActErasePixel():void { }
-		private function EditActClearImage():void { }
-		private function EditActFillImage():void { }
-		private function EditActLoadImage():void { }
-		private function EditActSaveImage():void { }
-		private function EditActToggleGrid():void { }
-		private function EditActToggleOpaqueMode():void { }
-		private function EditActShiftPixelsUp():void { }
-		private function EditActShiftPixelsDown():void { }
-		private function EditActShiftPixelsLeft():void { }
-		private function EditActShiftPixelsRight():void { }
-		private function EditActCopyImage():void { }
-		private function EditActPasteImage():void { }
-		private function EditActPreviewMode():void { }
-		private function EditActRandomFillImage():void { }
-		private function EditActFlipImage():void { }
-		private function EditActMirrorImage():void { }
-		private function EditActRotateImage():void { }
-		private function EditActBlurImage():void { }
-		private function EditActScatterImage():void { }
+		private function EditActDrawPixel():void 
+		{
+			/*int mousex = mouse_x - tile_edit_panel_rect[0];
+	int mousey = mouse_y - tile_edit_panel_rect[1];
+	int mx = (int)mousex / GRIDRES;
+	int my = (int)mousey / GRIDRES;
+	set_tiledata(mx, my, draw_color);
+	redraw_the_tile(tileimage);
+	putpixel(realtileimage, mx, my, draw_color);*/
+			
+		}
 		
+		private function EditActErasePixel():void 
+		{ 
+			/*int mousex = mouse_x - tile_edit_panel_rect[0];
+	int mousey = mouse_y - tile_edit_panel_rect[1];
+	int mx = (int)mousex / GRIDRES;
+	int my = (int)mousey / GRIDRES;
+	set_tiledata(mx, my, 0);
+	redraw_the_tile(tileimage);
+	putpixel(realtileimage, mx, my, 0);*/
+		}
+		
+		private function EditActClearImage():void 
+		{ 
+			/*// clear the image
+	clear_bitmap(realtileimage);
+	synchronize_editor_with_tile();
+	sprintf(name_of_file_being_edited, "untitled.bmp");*/
+		}
+		
+		private function EditActFillImage():void 
+		{ 
+			/*// fill the image
+	clear_to_color(realtileimage, draw_color);
+	synchronize_editor_with_tile();*/
+		}
+		
+		private function EditActLoadImage():void 
+		{ 
+			/*// load
+	//char path[80 * 8];
+	//sprintf(path, " ");
+	sprintf(name_of_file_being_edited, " ");
+	int ret = file_select_ex("Load A Tile...", name_of_file_being_edited, "BMP;bmp;", 80 * 8, 300, 400);
+	if (ret)
+	{
+		// load!
+		BITMAP * tmpbit = load_bmp(name_of_file_being_edited, NULL);
+		blit(tmpbit, realtileimage, 0, 0, 0, 0, tmpbit->w, tmpbit->h);
+		destroy_bitmap(tmpbit);
+		
+		// update the tile editor tiledata
+		synchronize_editor_with_tile();
+	}*/
+		}
+		
+		private function EditActSaveImage():void 
+		{ 
+			/*// save
+	// thanks to kazzmir in #allegro-support 10-11-07 6:22pm for helping me
+	//char path[80 * 8];
+	//sprintf(path, "untitled.bmp");
+	
+	int ret = file_select_ex("Save As...", name_of_file_being_edited, "BMP;bmp;", 80 * 8, 300, 400);
+	if (ret)
+	{
+		// save!
+		// fprintf(stdout, "you want to save to %s\n", path);
+		save_bmp(name_of_file_being_edited, realtileimage, NULL);
+	}
+	else
+	{
+		// nope, don't save
+		alert("Just to let you know...","","The current image has NOT been saved.", "Okay", NULL, KEY_ENTER, KEY_ESC);
+	}*/
+		}
+		
+		private function EditActToggleGrid():void 
+		{ 
+			/*// toggle the grid
+	if (show_grid == 1)
+	{
+		show_grid = 0;
+	}
+	else
+	{
+		show_grid = 1;
+	}
+	rest(100);*/
+		}
+		
+		private function EditActToggleOpaqueMode():void 
+		{
+			/*// toggle the opaque mode
+	if (opaque_drawing == 1)
+	{
+		opaque_drawing 	= 0;
+		hud_color 		= HUD_TRANSPARENT_MODE;
+	}
+	else
+	{
+		opaque_drawing 	= 1;
+		hud_color 		= HUD_OPAQUE_MODE;
+	}
+	redraw_the_tile(tileimage);
+	rest(100);*/
+		}
+		
+		private function EditActShiftPixelsUp():void 
+		{
+			ToolShiftPixelsUp();
+		}
+		
+		private function EditActShiftPixelsDown():void 
+		{
+			ToolShiftPixelsDown();
+		}
+		
+		private function EditActShiftPixelsLeft():void 
+		{
+			ToolShiftPixelsLeft();
+		}
+		
+		private function EditActShiftPixelsRight():void 
+		{
+			ToolShiftPixelsRight();
+		}
+		
+		private function EditActCopyImage():void 
+		{
+			/*// copy current image to clipboard buffer
+	blit(realtileimage, clipboardimage, 0, 0, 0, 0, realtileimage->w, realtileimage->h);
+	rest(50);*/
+		}
+		
+		private function EditActPasteImage():void 
+		{ 
+			/*// paste clipboard image to current image
+	// if opaque_drawing is set to zero, then when you paste from the clipboard buffer
+	// you will only copy the non-zero colored pixels
+	if (opaque_drawing == 1)
+	{
+		blit(clipboardimage, realtileimage, 0, 0, 0, 0, clipboardimage->w, clipboardimage->h);
+	}
+	else
+	{
+		draw_sprite(realtileimage, clipboardimage, 0, 0);
+	}
+	// update the tile editor
+	synchronize_editor_with_tile();
+	rest(50);*/
+		}
+		
+		private function EditActPreviewMode():void 
+		{ 
+			/*
+		//a very simple tiled-preview of the current tile fills the screen
+		//pressing space will exit the preview mode
+	
+	bool end_preview = false;
+	while (!end_preview)
+	{
+		if (key[KEY_SPACE])
+		{
+			end_preview = true;
+		}
+		clear_bitmap(doublebuffer);
+		{
+			// real size preview
+			{
+				for (int y = 0; y < SCREEN_H / 2; y += TILESZ)
+				{
+					for (int x = 0; x < SCREEN_W; x += TILESZ)
+					{
+						blit(realtileimage, doublebuffer, 0, 0, x, y, TILESZ, TILESZ);
+					}
+				}
+			}
+			
+			// zoom tiled preview
+			{
+				for (int y = SCREEN_H / 2; y < SCREEN_H; y += zoom_tile_rect[5])
+				{
+					for (int x = 0; x < SCREEN_W; x += zoom_tile_rect[4])
+					{
+						stretch_blit(realtileimage, doublebuffer, 0, 0, realtileimage->w, realtileimage->h, 
+						x, y, zoom_tile_rect[4], zoom_tile_rect[5]);
+					}
+				}
+			}
+		}
+		blit(doublebuffer, screen, 0, 0, 0, 0, doublebuffer->w, doublebuffer->h);
+	}
+	clear_bitmap(doublebuffer);*/
+		}
+		
+		private function EditActRandomFillImage():void 
+		{ 
+			/*int iterations = (int)(TILESZ * TILESZ) / 8;
+	
+	for (int n = 0; n < iterations; n++)
+	{
+		int px = rand() % TILESZ;
+		int py = rand() % TILESZ;
+		putpixel(realtileimage, px, py, draw_color);
+	}
+	// update the tile editor
+	synchronize_editor_with_tile();
+	rest(50);*/
+		}
+		
+		private function EditActFlipImage():void 
+		{
+			/*// flip (vertical mirror)
+	BITMAP * t = create_bitmap (TILESZ, TILESZ);
+	clear_bitmap (t);
+	
+	{
+		for (int y = 0; y < TILESZ; y++)
+		{
+			for (int x = 0; x < TILESZ; x++)
+			{
+				putpixel (t, x, y, getpixel(realtileimage, x, (TILESZ-1)-y));
+			}
+		}
+	}
+	
+	blit (t, realtileimage, 0, 0, 0, 0, TILESZ, TILESZ);
+	destroy_bitmap (t);
+	
+	// update the tile editor
+	synchronize_editor_with_tile();
+	rest(50);*/
+		}
+		
+		private function EditActMirrorImage():void 
+		{
+			/*// mirror (horizontal mirror)
+	BITMAP * t = create_bitmap (TILESZ, TILESZ);
+	clear_bitmap (t);
+	
+	{
+		for (int y = 0; y < TILESZ; y++)
+		{
+			for (int x = 0; x < TILESZ; x++)
+			{
+				putpixel (t, x, y, getpixel(realtileimage, (TILESZ-1)-x, y));
+			}
+		}
+	}
+	
+	blit (t, realtileimage, 0, 0, 0, 0, TILESZ, TILESZ);
+	destroy_bitmap (t);
+	
+	// update the tile editor
+	synchronize_editor_with_tile();
+	rest(50);*/
+		}
+		
+		private function EditActRotateImage():void 
+		{
+			/*BITMAP * t = create_bitmap (TILESZ, TILESZ);
+	clear_bitmap (t);
+	
+	// actual rotation
+	{
+		for (int x = 0; x < TILESZ; x++)
+		{
+			for (int y = 0; y < TILESZ; y++)
+			{
+				putpixel (t, y, (TILESZ - 1) - x, getpixel(realtileimage, x, y));
+			}
+		}
+	}
+	
+	blit (t, realtileimage, 0, 0, 0, 0, TILESZ, TILESZ);
+	destroy_bitmap (t);
+	
+	// update the tile editor
+	synchronize_editor_with_tile();
+	rest(50);*/
+		}
+		
+		private function EditActBlurImage():void 
+		{
+			/*BITMAP * t = create_bitmap (TILESZ, TILESZ);
+	clear_bitmap (t);
+	blit (realtileimage, t, 0, 0, 0, 0, TILESZ, TILESZ);
+	// blur!
+	{
+		for (int x = 0; x < TILESZ; x++)
+		{
+			for (int y = 0; y < TILESZ; y++)
+			{
+				
+				
+				
+				// [0][1][2]
+				// [7][p][3] p = current pixel
+				// [6][5][4]
+				
+				
+				int sample[8];
+				
+				sample[0] = getpixel(realtileimage, x - 1, y - 1);
+				sample[1] = getpixel(realtileimage, x, y - 1);
+				sample[2] = getpixel(realtileimage, x + 1, y - 1);
+				sample[3] = getpixel(realtileimage, x + 1, y);
+				sample[4] = getpixel(realtileimage, x + 1, y + 1);
+				sample[5] = getpixel(realtileimage, x, y + 1);
+				sample[6] = getpixel(realtileimage, x - 1, y + 1);
+				sample[7] = getpixel(realtileimage, x - 1, y);
+				
+				int final = sample[0];
+				
+				for (int s = 1; s < 8; s++)
+				{
+					final += sample[s];
+				}
+				final = (int)final / 4;
+				
+				putpixel (t, x, y, final);
+			}
+		}
+	}
+	
+	blit (t, realtileimage, 0, 0, 0, 0, TILESZ, TILESZ);
+	destroy_bitmap (t);
+	
+	// update the tile editor
+	synchronize_editor_with_tile();
+	rest(50);*/
+		}
+		
+		private function EditActScatterImage():void 
+		{
+			/*BITMAP * t = create_bitmap (TILESZ, TILESZ);
+	clear_bitmap (t);
+	blit (realtileimage, t, 0, 0, 0, 0, TILESZ, TILESZ);
+
+	{
+		int min = -4;
+		int max = 4;
+		
+		for (int x = 0; x < TILESZ-1; x++)
+		{
+			for (int y = 0; y < TILESZ-1; y++)
+			{
+				int dx = min + rand() % (max - min);
+				int dy = min + rand() % (max - min);
+				if (x+dx<TILESZ&&x+dx>0&&y+dy<TILESZ&&y+dy>0)
+				{
+					int oldcolor = getpixel(t, x, y);
+					int newcolor = getpixel(t, x + dx, y + dy);
+					putpixel (t, x, y, newcolor);
+					putpixel (t, x + dx, y + dy, oldcolor);
+				}
+			}
+		}
+	}
+	
+	blit (t, realtileimage, 0, 0, 0, 0, TILESZ, TILESZ);
+	destroy_bitmap (t);
+	
+	// update the tile editor
+	synchronize_editor_with_tile();
+	rest(50);*/
+		}
+		
+		private function UIDrawFrame(rect:Rectangle):void
+		{
+			/*// draw a multicolor frame around the outside of the rect r
+	{
+		int c[4];
+		c[0] = makecol(255,255,255);
+		c[1] = makecol(192,192,192);
+		c[2] = makecol(128,128,128);
+		c[3] = makecol(64,64,64);
+		int i = 0;
+		
+		for (i = 0; i < 4; i++)
+		{
+			rect(doublebuffer, r[0]-i, r[1]-i, r[2]+i, r[3]+i, c[i]);
+		}
+	}*/
+		}
 	}
 }
