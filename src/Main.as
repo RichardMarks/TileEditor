@@ -367,7 +367,7 @@ package
 		
 		private function SetTileData(x:uint, y:uint, value:uint):void
 		{
-			trace("SetTileData(" + x + ", " + y + ", " + value + ");");
+			//trace("SetTileData(" + x + ", " + y + ", " + value + ");");
 			
 			tileData[x + (y * TILESZ)] = value;
 		}
@@ -580,7 +580,7 @@ package
 			var mx:Number = int(mouseX / GRIDRES);
 			var my:Number = int(mouseY / GRIDRES);
 			
-			trace("EditActDrawPixel","mouseX=",mouseX,"mouseY=",mouseY,"mx=",mx,"my=",my,"drawColor=",drawColor);
+			//trace("EditActDrawPixel","mouseX=",mouseX,"mouseY=",mouseY,"mx=",mx,"my=",my,"drawColor=",drawColor);
 			
 			SetTileData(mx, my, drawColor);
 			RedrawTheTile(tileImage);
@@ -654,7 +654,7 @@ package
 		private function EditActToggleGrid():void 
 		{ 
 			showGrid = !showGrid;
-			trace("toggle grid:",showGrid);
+			//trace("toggle grid:",showGrid);
 		}
 		
 		private function EditActToggleOpaqueMode():void 
@@ -694,13 +694,13 @@ package
 		
 		private function EditActCopyImage():void 
 		{
-			trace("copying image to cliboard");
+			//trace("copying image to cliboard");
 			clipboardImage.copyPixels(realTileImage, realTileImage.rect, new Point);
 		}
 		
 		private function EditActPasteImage():void 
 		{ 
-			trace("pasting image from cliboard");
+			//trace("pasting image from cliboard");
 			if (opaqueDrawing)
 			{
 				realTileImage.copyPixels(clipboardImage, clipboardImage.rect, new Point);
@@ -770,8 +770,8 @@ package
 			var iterations:Number = int((TILESZ * TILESZ) * 0.125);
 			for (var i:Number = 0; i < iterations; i++)
 			{
-				var px:Number = Math.random() % TILESZ;
-				var py:Number = Math.random() % TILESZ;
+				var px:Number = Math.random() * TILESZ;
+				var py:Number = Math.random() * TILESZ;
 				realTileImage.setPixel32(px, py, AL.PALETTE256[drawColor]);
 			}
 			
@@ -840,9 +840,10 @@ package
 			// lets see which method works better
 			
 			// flash filter blur
-			//t.applyFilter(t, t.rect, new Point, new BlurFilter);
+			t.applyFilter(t, t.rect, new Point, new BlurFilter);
 			
 			// manual blur
+			/*
 			var sample:Vector.<uint> = new Vector.<uint>(8);
 			var color:uint = 0;
 			for (var x:Number = 0; x < TILESZ; x++)
@@ -867,6 +868,7 @@ package
 					t.setPixel32(x, y, color);
 				}
 			}
+			*/
 			
 			realTileImage.copyPixels(t, t.rect, new Point);
 			t.dispose();
