@@ -132,7 +132,7 @@ package
 			paletteImage = new BitmapData(palettePanelRect.width, palettePanelRect.height, true, 0xFF000000);
 			gridImage = new BitmapData(tileImage.width, tileImage.height, true, 0x00000000);
 			clipboardImage = new BitmapData(TILESZ, TILESZ, true, 0xFF000000);
-			xorPixel = new BitmapData(GRIDRES, GRIDRES, true, 0x00000000);
+			xorPixel = new BitmapData(GRIDRES, GRIDRES, true, 0xFF000000);
 			
 			// draw the xorpixel texture
 			for (var x:Number = 0; x < xorPixel.width; x++)
@@ -394,7 +394,7 @@ package
 					rect.x = x * GRIDRES;
 					var pixelColor:Number = GetTileData(x, y);
 					b.fillRect(rect, AL.PALETTE256[pixelColor]);
-					if (!opaqueDrawing && pixelColor == AL.PALETTE256[0])
+					if (!opaqueDrawing && pixelColor == 0)
 					{
 						b.copyPixels(xorPixel, xorPixel.rect, new Point(rect.x, rect.y));
 					}
