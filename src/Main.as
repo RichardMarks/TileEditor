@@ -7,6 +7,7 @@ package
 	import flash.events.Event;
 	import flash.events.KeyboardEvent;
 	import flash.events.MouseEvent;
+	import flash.filters.BlurFilter;
 	import flash.geom.Point;
 	import flash.geom.Rectangle;
 	import net.flashpunk.utils.Key;
@@ -104,8 +105,12 @@ package
 		static public var hudColor:Number = HUD_OPAQUE_MODE;
 		
 		// mode toggles
-		static public var showGrid:Number = 1;
+		static public var showGrid:Boolean = true;
 		static public var opaqueDrawing:Number = 1;
+		
+		// cpu saver
+		private var renderNeeded:Boolean = true;
+		
 		
 		public function Main():void 
 		{
@@ -138,14 +143,17 @@ package
 			}
 			
 			// draw the panels
+			EditActRandomFillImage();
+			
 			RedrawTheTile(tileImage);
 			RedrawThePalette(paletteImage);
 			RedrawTheGrid(gridImage);
 			
 			addEventListener(Event.ENTER_FRAME, MainLoop);
-			addEventListener(KeyboardEvent.KEY_DOWN, OnKeyDown);
-			addEventListener(KeyboardEvent.KEY_UP, OnKeyUp);
-			addEventListener(MouseEvent.CLICK, OnMouseClick);
+			
+			stage.addEventListener(KeyboardEvent.KEY_DOWN, OnKeyDown);
+			stage.addEventListener(KeyboardEvent.KEY_UP, OnKeyUp);
+			stage.addEventListener(MouseEvent.CLICK, OnMouseClick);
 			
 			addChild(new Bitmap(backBuffer, PixelSnapping.NEVER));
 		}
@@ -187,7 +195,7 @@ package
 				
 				case Key.T: { DoEditorAction(EDITACT_TOGGLE_OPAQUE_MODE); } break;
 				case Key.F: { DoEditorAction(EDITACT_FILL_IMAGE); } break;
-				case Key.G: { DoEditorAction(EDITACT_TOGGLE_GRID); } break;
+				case Key.G: { trace("g key pressed"); DoEditorAction(EDITACT_TOGGLE_GRID); } break;
 				case Key.N: { DoEditorAction(EDITACT_CLEAR_IMAGE); } break;
 				case Key.S: { DoEditorAction(EDITACT_SAVE_IMAGE); } break;
 				case Key.L: { DoEditorAction(EDITACT_LOAD_IMAGE); } break;
@@ -207,7 +215,7 @@ package
 		
 		private function OnMouseClick(e:MouseEvent):void 
 		{ 
-			//trace("mouse click at", e.stageX, ",", e.stageY);
+			trace("mouse click at", e.stageX, ",", e.stageY);
 			
 			// handle mouse input
 			var mouseX:Number = e.stageX;
@@ -216,13 +224,19 @@ package
 			// tile editor panel
 			if (tileEditPanelRect.contains(mouseX, mouseY))
 			{
+				trace("clicked tile edit panel");
 				if (e.altKey) { DoEditorAction(EDITACT_ERASE_PIXEL); }
-				else { DoEditorAction(EDITACT_DRAW_PIXEL); }
+				else 
+				{ 
+					DoEditorAction(EDITACT_DRAW_PIXEL); 
+					trace("draw pixel");
+				}
 			}
 			// color palette panel
 			else if (palettePanelRect.contains(mouseX, mouseY))
 			{
-				drawColor = paletteImage.getPixel32(mouseX - palettePanelRect.x, mouseY - palettePanelRect.y);
+				drawColor = AL.GetPaletteIndex(paletteImage.getPixel32(mouseX - palettePanelRect.x, mouseY - palettePanelRect.y));
+				trace("clicked palette panel, color is", drawColor);
 			}
 			// close button
 			else if (uiCloseButtonRect.contains(mouseX, mouseY))
@@ -238,16 +252,30 @@ package
 		
 		private function MainLoop(e:Event):void
 		{
+			if (!renderNeeded)
+			{
+				return;
+			}
+			renderNeeded = false;
+			
 			// render
 			
-			AL.clear_bitmap(backBuffer);
+			//AL.clear_bitmap(backBuffer);
 			
 			// draw clipboard buffer
-			backBuffer.copyPixels(clipboardImage, clipboardImage.rect, new Point(clipboardTileRect.x, clipboardTileRect.y));
+			//backBuffer.copyPixels(clipboardImage, clipboardImage.rect, new Point(clipboardTileRect.x, clipboardTileRect.y));
+			
+			AL.stretch_blit(clipboardImage, backBuffer, clipboardImage.rect, clipboardTileRect);
+			
 			//stretch_blit(clipboardimage, doublebuffer, 0, 0, clipboardimage->w, clipboardimage->h, clipboard_tile_rect[0], clipboard_tile_rect[1], clipboard_tile_rect[4], clipboard_tile_rect[5]);
 		
+			
 			// draw zoomed tile
-			backBuffer.copyPixels(realTileImage, realTileImage.rect, new Point(zoomTileRect.x, zoomTileRect.y));
+			
+			//backBuffer.copyPixels(realTileImage, realTileImage.rect, new Point(zoomTileRect.x, zoomTileRect.y));
+			
+			AL.stretch_blit(realTileImage, backBuffer, realTileImage.rect, zoomTileRect);
+			
 			// stretch_blit(realtileimage, doublebuffer, 0, 0, realtileimage->w, realtileimage->h, zoom_tile_rect[0], zoom_tile_rect[1], zoom_tile_rect[4], zoom_tile_rect[5]);
 		
 			// draw edited tile
@@ -263,36 +291,20 @@ package
 			{
 				backBuffer.copyPixels(gridImage, gridImage.rect, new Point(tileEditPanelRect.x, tileEditPanelRect.y));
 			}
+		
+			// draw hud (the frames that go around every panel
+			UIDrawFrame(tileEditPanelRect);
+			UIDrawFrame(palettePanelRect);
+			UIDrawFrame(zoomTileRect);
+			UIDrawFrame(clipboardTileRect);
+			UIDrawFrame(infoPanelRect);
+			UIDrawFrame(uiCloseButtonRect);
+			UIDrawFrame(uiFilenameRect);
+			UIDrawFrame(uiTranspButtonRect);
+			UIDrawFrame(uiStatusBarRect);
 			
 			/*
-		// draw hud (the frames that go around every panel
 		
-		ui_draw_frame(tile_edit_panel_rect);
-		//rect(doublebuffer, tile_edit_panel_rect[0], tile_edit_panel_rect[1], tile_edit_panel_rect[2], tile_edit_panel_rect[3], hud_color);
-		
-		ui_draw_frame(palette_panel_rect);
-		//rect(doublebuffer, palette_panel_rect[0], palette_panel_rect[1], palette_panel_rect[2], palette_panel_rect[3], hud_color);
-		
-		ui_draw_frame(zoom_tile_rect);
-		//rect(doublebuffer, zoom_tile_rect[0], zoom_tile_rect[1], zoom_tile_rect[2], zoom_tile_rect[3], hud_color);
-		
-		ui_draw_frame(clipboard_tile_rect);
-		//rect(doublebuffer, clipboard_tile_rect[0], clipboard_tile_rect[1], clipboard_tile_rect[2], clipboard_tile_rect[3], hud_color);
-		
-		ui_draw_frame(info_panel_rect);
-		//rect(doublebuffer, info_panel_rect[0], info_panel_rect[1], info_panel_rect[2], info_panel_rect[3], hud_color);
-		
-		ui_draw_frame(ui_close_button_rect);
-		textprintf_ex(doublebuffer, font, ui_close_button_rect[0] + 5, ui_close_button_rect[1] + 5, makecol(255,0,0), -1, "X");
-		
-		ui_draw_frame(ui_filename_rect);
-		textprintf_ex(doublebuffer, font, ui_filename_rect[0] + 4, ui_filename_rect[1] + 4, makecol(255,255,255), -1, "Editing: %s", name_of_file_being_edited);
-		
-		
-		
-		
-		ui_draw_frame(ui_transp_button_rect);
-		ui_draw_frame(ui_status_bar_rect);
 		textprintf_ex(doublebuffer, font, ui_transp_button_rect[0] + 5, ui_transp_button_rect[1] + 5, hud_color, -1, (opaque_drawing==1)?"T":"O");
 
 		
@@ -344,6 +356,8 @@ package
 		
 		private function SetTileData(x:uint, y:uint, value:uint):void
 		{
+			trace("SetTileData(" + x + ", " + y + ", " + value + ");");
+			
 			tileData[x + (y * TILESZ)] = value;
 		}
 		
@@ -354,10 +368,11 @@ package
 		
 		private function RedrawTheGrid(b:BitmapData):void
 		{
+			var color:uint = AL.PALETTE256[gridColor];
 			for (var i:Number = 0; i < TILESZ; i++)
 			{
-				AL.line(b, 0, i * GRIDRES, b.width, i * GRIDRES, gridColor);
-				AL.line(b, i * GRIDRES, 0, i * GRIDRES, b.height, gridColor);
+				AL.line(b, 0, i * GRIDRES, b.width, i * GRIDRES, color);
+				AL.line(b, i * GRIDRES, 0, i * GRIDRES, b.height, color);
 			}
 		}
 		
@@ -372,9 +387,9 @@ package
 				for (var x:Number = 0; x < TILESZ; x++)
 				{
 					rect.x = x * GRIDRES;
-					var pixelColor:uint = GetTileData(x, y);
-					b.fillRect(rect, pixelColor);
-					if (!opaqueDrawing && pixelColor == 0)
+					var pixelColor:Number = GetTileData(x, y);
+					b.fillRect(rect, AL.PALETTE256[pixelColor]);
+					if (!opaqueDrawing && pixelColor == AL.PALETTE256[0])
 					{
 						b.copyPixels(xorPixel, xorPixel.rect, new Point(rect.x, rect.y));
 					}
@@ -415,7 +430,7 @@ package
 			{
 				for (var x:Number = 0; x < realTileImage.width; x++)
 				{
-					var pixelColor:uint = realTileImage.getPixel32(x, y);
+					var pixelColor:uint = AL.GetPaletteIndex(realTileImage.getPixel32(x, y));
 					SetTileData(x, y, pixelColor);
 				}
 			}
@@ -535,44 +550,46 @@ package
 					throw new Error("Unknown action: " + action);
 				} break;
 			}
+			
+			renderNeeded = true;
 		}
 		
 		private function EditActDrawPixel():void 
 		{
-			/*int mousex = mouse_x - tile_edit_panel_rect[0];
-	int mousey = mouse_y - tile_edit_panel_rect[1];
-	int mx = (int)mousex / GRIDRES;
-	int my = (int)mousey / GRIDRES;
-	set_tiledata(mx, my, draw_color);
-	redraw_the_tile(tileimage);
-	putpixel(realtileimage, mx, my, draw_color);*/
+			var mouseX:Number = stage.mouseX - tileEditPanelRect.left;
+			var mouseY:Number = stage.mouseY - tileEditPanelRect.top;
+			var mx:Number = int(mouseX / GRIDRES);
+			var my:Number = int(mouseY / GRIDRES);
 			
+			trace("EditActDrawPixel","mouseX=",mouseX,"mouseY=",mouseY,"mx=",mx,"my=",my,"drawColor=",drawColor);
+			
+			SetTileData(mx, my, drawColor);
+			RedrawTheTile(tileImage);
+			realTileImage.setPixel32(mx, my, AL.PALETTE256[drawColor]);
+			//SynchronizeEditorWithTile();
 		}
 		
 		private function EditActErasePixel():void 
 		{ 
-			/*int mousex = mouse_x - tile_edit_panel_rect[0];
-	int mousey = mouse_y - tile_edit_panel_rect[1];
-	int mx = (int)mousex / GRIDRES;
-	int my = (int)mousey / GRIDRES;
-	set_tiledata(mx, my, 0);
-	redraw_the_tile(tileimage);
-	putpixel(realtileimage, mx, my, 0);*/
+			var mouseX:Number = stage.mouseX - tileEditPanelRect.left;
+			var mouseY:Number = stage.mouseY - tileEditPanelRect.top;
+			var mx:Number = int(mouseX / GRIDRES);
+			var my:Number = int(mouseY / GRIDRES);
+			SetTileData(mx, my, 0);
+			RedrawTheTile(tileImage);
+			realTileImage.setPixel32(mx, my, AL.PALETTE256[0]);
 		}
 		
 		private function EditActClearImage():void 
 		{ 
-			/*// clear the image
-	clear_bitmap(realtileimage);
-	synchronize_editor_with_tile();
-	sprintf(name_of_file_being_edited, "untitled.bmp");*/
+			realTileImage.fillRect(realTileImage.rect, 0xFF000000);
+			SynchronizeEditorWithTile();
 		}
 		
 		private function EditActFillImage():void 
 		{ 
-			/*// fill the image
-	clear_to_color(realtileimage, draw_color);
-	synchronize_editor_with_tile();*/
+			realTileImage.fillRect(realTileImage.rect, AL.PALETTE256[drawColor]);
+			SynchronizeEditorWithTile();
 		}
 		
 		private function EditActLoadImage():void 
@@ -617,33 +634,23 @@ package
 		
 		private function EditActToggleGrid():void 
 		{ 
-			/*// toggle the grid
-	if (show_grid == 1)
-	{
-		show_grid = 0;
-	}
-	else
-	{
-		show_grid = 1;
-	}
-	rest(100);*/
+			showGrid = !showGrid;
+			trace("toggle grid:",showGrid);
 		}
 		
 		private function EditActToggleOpaqueMode():void 
 		{
-			/*// toggle the opaque mode
-	if (opaque_drawing == 1)
-	{
-		opaque_drawing 	= 0;
-		hud_color 		= HUD_TRANSPARENT_MODE;
-	}
-	else
-	{
-		opaque_drawing 	= 1;
-		hud_color 		= HUD_OPAQUE_MODE;
-	}
-	redraw_the_tile(tileimage);
-	rest(100);*/
+			if (opaqueDrawing)
+			{
+				opaqueDrawing = 0;
+				hudColor = HUD_TRANSPARENT_MODE;
+			}
+			else
+			{
+				opaqueDrawing = 1;
+				hudColor = HUD_OPAQUE_MODE;
+			}
+			RedrawTheTile(tileImage);
 		}
 		
 		private function EditActShiftPixelsUp():void 
@@ -668,27 +675,30 @@ package
 		
 		private function EditActCopyImage():void 
 		{
-			/*// copy current image to clipboard buffer
-	blit(realtileimage, clipboardimage, 0, 0, 0, 0, realtileimage->w, realtileimage->h);
-	rest(50);*/
+			clipboardImage.copyPixels(realTileImage, realTileImage.rect, new Point);
 		}
 		
 		private function EditActPasteImage():void 
 		{ 
-			/*// paste clipboard image to current image
-	// if opaque_drawing is set to zero, then when you paste from the clipboard buffer
-	// you will only copy the non-zero colored pixels
-	if (opaque_drawing == 1)
-	{
-		blit(clipboardimage, realtileimage, 0, 0, 0, 0, clipboardimage->w, clipboardimage->h);
-	}
-	else
-	{
-		draw_sprite(realtileimage, clipboardimage, 0, 0);
-	}
-	// update the tile editor
-	synchronize_editor_with_tile();
-	rest(50);*/
+			if (opaqueDrawing)
+			{
+				realTileImage.copyPixels(clipboardImage, clipboardImage.rect, new Point);
+			}
+			else
+			{
+				for (var y:Number = 0; y < clipboardImage.height; y++)
+				{
+					for (var x:Number = 0; x < clipboardImage.width; x++)
+					{
+						var sourcePixel:uint = clipboardImage.getPixel32(x, y);
+						if (sourcePixel != AL.PALETTE256[0])
+						{
+							realTileImage.setPixel32(x, y, sourcePixel);
+						}
+					}
+				}
+			}
+			SynchronizeEditorWithTile();
 		}
 		
 		private function EditActPreviewMode():void 
@@ -735,194 +745,149 @@ package
 		}
 		
 		private function EditActRandomFillImage():void 
-		{ 
-			/*int iterations = (int)(TILESZ * TILESZ) / 8;
-	
-	for (int n = 0; n < iterations; n++)
-	{
-		int px = rand() % TILESZ;
-		int py = rand() % TILESZ;
-		putpixel(realtileimage, px, py, draw_color);
-	}
-	// update the tile editor
-	synchronize_editor_with_tile();
-	rest(50);*/
+		{
+			var iterations:Number = int((TILESZ * TILESZ) * 0.125);
+			for (var i:Number = 0; i < iterations; i++)
+			{
+				var px:Number = Math.random() % TILESZ;
+				var py:Number = Math.random() % TILESZ;
+				realTileImage.setPixel32(px, py, AL.PALETTE256[drawColor]);
+			}
+			
+			SynchronizeEditorWithTile();
 		}
 		
 		private function EditActFlipImage():void 
 		{
-			/*// flip (vertical mirror)
-	BITMAP * t = create_bitmap (TILESZ, TILESZ);
-	clear_bitmap (t);
-	
-	{
-		for (int y = 0; y < TILESZ; y++)
-		{
-			for (int x = 0; x < TILESZ; x++)
+			var t:BitmapData = new BitmapData(TILESZ, TILESZ, true, 0x00000000);
+			t.copyPixels(realTileImage, realTileImage.rect, new Point);
+			
+			for (var x:Number = 0; x < TILESZ; x++)
 			{
-				putpixel (t, x, y, getpixel(realtileimage, x, (TILESZ-1)-y));
+				for (var y:Number = 0; y < TILESZ; y++)
+				{
+					t.setPixel32(x, y, realTileImage.getPixel32(x, (TILESZ - 1) - y));
+				}
 			}
-		}
-	}
-	
-	blit (t, realtileimage, 0, 0, 0, 0, TILESZ, TILESZ);
-	destroy_bitmap (t);
-	
-	// update the tile editor
-	synchronize_editor_with_tile();
-	rest(50);*/
+			
+			realTileImage.copyPixels(t, t.rect, new Point);
+			t.dispose();
+			SynchronizeEditorWithTile();
 		}
 		
 		private function EditActMirrorImage():void 
 		{
-			/*// mirror (horizontal mirror)
-	BITMAP * t = create_bitmap (TILESZ, TILESZ);
-	clear_bitmap (t);
-	
-	{
-		for (int y = 0; y < TILESZ; y++)
-		{
-			for (int x = 0; x < TILESZ; x++)
+			var t:BitmapData = new BitmapData(TILESZ, TILESZ, true, 0x00000000);
+			t.copyPixels(realTileImage, realTileImage.rect, new Point);
+			
+			for (var x:Number = 0; x < TILESZ; x++)
 			{
-				putpixel (t, x, y, getpixel(realtileimage, (TILESZ-1)-x, y));
+				for (var y:Number = 0; y < TILESZ; y++)
+				{
+					t.setPixel32(x, y, realTileImage.getPixel32((TILESZ - 1) - x, y));
+				}
 			}
-		}
-	}
-	
-	blit (t, realtileimage, 0, 0, 0, 0, TILESZ, TILESZ);
-	destroy_bitmap (t);
-	
-	// update the tile editor
-	synchronize_editor_with_tile();
-	rest(50);*/
+			
+			realTileImage.copyPixels(t, t.rect, new Point);
+			t.dispose();
+			SynchronizeEditorWithTile();
 		}
 		
 		private function EditActRotateImage():void 
 		{
-			/*BITMAP * t = create_bitmap (TILESZ, TILESZ);
-	clear_bitmap (t);
-	
-	// actual rotation
-	{
-		for (int x = 0; x < TILESZ; x++)
-		{
-			for (int y = 0; y < TILESZ; y++)
+			var t:BitmapData = new BitmapData(TILESZ, TILESZ, true, 0x00000000);
+			t.copyPixels(realTileImage, realTileImage.rect, new Point);
+			
+			for (var x:Number = 0; x < TILESZ; x++)
 			{
-				putpixel (t, y, (TILESZ - 1) - x, getpixel(realtileimage, x, y));
+				for (var y:Number = 0; y < TILESZ; y++)
+				{
+					t.setPixel32(y, (TILESZ - 1) - x, realTileImage.getPixel32(x, y));
+				}
 			}
-		}
-	}
-	
-	blit (t, realtileimage, 0, 0, 0, 0, TILESZ, TILESZ);
-	destroy_bitmap (t);
-	
-	// update the tile editor
-	synchronize_editor_with_tile();
-	rest(50);*/
+			
+			realTileImage.copyPixels(t, t.rect, new Point);
+			t.dispose();
+			SynchronizeEditorWithTile();
 		}
 		
 		private function EditActBlurImage():void 
 		{
-			/*BITMAP * t = create_bitmap (TILESZ, TILESZ);
-	clear_bitmap (t);
-	blit (realtileimage, t, 0, 0, 0, 0, TILESZ, TILESZ);
-	// blur!
-	{
-		for (int x = 0; x < TILESZ; x++)
-		{
-			for (int y = 0; y < TILESZ; y++)
+			var t:BitmapData = new BitmapData(TILESZ, TILESZ, true, 0x00000000);
+			t.copyPixels(realTileImage, realTileImage.rect, new Point);
+			
+			// lets see which method works better
+			
+			// flash filter blur
+			//t.applyFilter(t, t.rect, new Point, new BlurFilter);
+			
+			// manual blur
+			var sample:Vector.<uint> = new Vector.<uint>(8);
+			var color:uint = 0;
+			for (var x:Number = 0; x < TILESZ; x++)
 			{
-				
-				
-				
-				// [0][1][2]
-				// [7][p][3] p = current pixel
-				// [6][5][4]
-				
-				
-				int sample[8];
-				
-				sample[0] = getpixel(realtileimage, x - 1, y - 1);
-				sample[1] = getpixel(realtileimage, x, y - 1);
-				sample[2] = getpixel(realtileimage, x + 1, y - 1);
-				sample[3] = getpixel(realtileimage, x + 1, y);
-				sample[4] = getpixel(realtileimage, x + 1, y + 1);
-				sample[5] = getpixel(realtileimage, x, y + 1);
-				sample[6] = getpixel(realtileimage, x - 1, y + 1);
-				sample[7] = getpixel(realtileimage, x - 1, y);
-				
-				int final = sample[0];
-				
-				for (int s = 1; s < 8; s++)
+				for (var y:Number = 0; y < TILESZ; y++)
 				{
-					final += sample[s];
+					sample[0] = realTileImage.getPixel32(x - 1, y - 1);
+					sample[1] = realTileImage.getPixel32(x, y - 1);
+					sample[2] = realTileImage.getPixel32(x + 1, y - 1);
+					sample[3] = realTileImage.getPixel32(x + 1, y);
+					sample[4] = realTileImage.getPixel32(x + 1, y + 1);
+					sample[5] = realTileImage.getPixel32(x, y + 1);
+					sample[6] = realTileImage.getPixel32(x - 1, y + 1);
+					sample[7] = realTileImage.getPixel32(x - 1, y);
+					
+					color = uint(sample[0]);
+					for (var s:Number = 1; s < 8; s++)
+					{
+						color += sample[s];
+					}
+					color *= 0.25;
+					t.setPixel32(x, y, color);
 				}
-				final = (int)final / 4;
-				
-				putpixel (t, x, y, final);
 			}
-		}
-	}
-	
-	blit (t, realtileimage, 0, 0, 0, 0, TILESZ, TILESZ);
-	destroy_bitmap (t);
-	
-	// update the tile editor
-	synchronize_editor_with_tile();
-	rest(50);*/
+			
+			realTileImage.copyPixels(t, t.rect, new Point);
+			t.dispose();
+			SynchronizeEditorWithTile();
 		}
 		
 		private function EditActScatterImage():void 
 		{
-			/*BITMAP * t = create_bitmap (TILESZ, TILESZ);
-	clear_bitmap (t);
-	blit (realtileimage, t, 0, 0, 0, 0, TILESZ, TILESZ);
-
-	{
-		int min = -4;
-		int max = 4;
-		
-		for (int x = 0; x < TILESZ-1; x++)
-		{
-			for (int y = 0; y < TILESZ-1; y++)
+			var t:BitmapData = new BitmapData(TILESZ, TILESZ, true, 0x00000000);
+			t.copyPixels(realTileImage, realTileImage.rect, new Point);
+			const min:Number = -4;
+			const max:Number = 4;
+			
+			for (var x:Number = 0; x < TILESZ - 1; x++)
 			{
-				int dx = min + rand() % (max - min);
-				int dy = min + rand() % (max - min);
-				if (x+dx<TILESZ&&x+dx>0&&y+dy<TILESZ&&y+dy>0)
+				for (var y:Number = 0; y < TILESZ - 1; y++)
 				{
-					int oldcolor = getpixel(t, x, y);
-					int newcolor = getpixel(t, x + dx, y + dy);
-					putpixel (t, x, y, newcolor);
-					putpixel (t, x + dx, y + dy, oldcolor);
+					var dx:Number = min + Math.random() % (max - min);
+					var dy:Number = min + Math.random() % (max - min);
+					if (x + dx < TILESZ && x + dx > 0 && y + dy < TILESZ && y + dy > 0)
+					{
+						var oldColor:Number = t.getPixel32(x, y);
+						var newColor:Number = t.getPixel32(x + dx, y + dy);
+						t.setPixel32(x, y, newColor);
+						t.setPixel32(x + dx, y + dy, oldColor);
+					}
 				}
 			}
-		}
-	}
-	
-	blit (t, realtileimage, 0, 0, 0, 0, TILESZ, TILESZ);
-	destroy_bitmap (t);
-	
-	// update the tile editor
-	synchronize_editor_with_tile();
-	rest(50);*/
+			
+			realTileImage.copyPixels(t, t.rect, new Point);
+			t.dispose();
+			SynchronizeEditorWithTile();
 		}
 		
 		private function UIDrawFrame(rect:Rectangle):void
 		{
-			/*// draw a multicolor frame around the outside of the rect r
-	{
-		int c[4];
-		c[0] = makecol(255,255,255);
-		c[1] = makecol(192,192,192);
-		c[2] = makecol(128,128,128);
-		c[3] = makecol(64,64,64);
-		int i = 0;
-		
-		for (i = 0; i < 4; i++)
-		{
-			rect(doublebuffer, r[0]-i, r[1]-i, r[2]+i, r[3]+i, c[i]);
-		}
-	}*/
+			const colors:Vector.<uint> = Vector.<uint>([0xFFFFFFFF, 0xFFC0C0C0, 0xFF808080, 0xFF404040]);
+			
+			for (var i:Number = 0; i < 4; i++)
+			{
+				AL.rect(backBuffer, rect.left - i, rect.top - i, rect.right + i, rect.bottom + i, colors[i]);
+			}
 		}
 	}
 }

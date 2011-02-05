@@ -1,12 +1,20 @@
 package  
 {
 	import flash.display.BitmapData;
+	import flash.geom.Matrix;
+	import flash.geom.Point;
+	import flash.geom.Rectangle;
 	/**
 	 * Allegro functions
 	 * @author Richard Marks
 	 */
 	public class AL 
 	{
+		static public function GetPaletteIndex(color:uint):Number
+		{
+			return PALETTE256.indexOf(color);
+		}
+		
 		static public const PALETTE256:Array = 
 		[
 			0xFF000000,0xFF0000A8,0xFF00A800,0xFF00A8A8,0xFFA80000,0xFFA800A8,0xFFA85400,0xFFA8A8A8,
@@ -65,16 +73,90 @@ package
 			b.fillRect(b.rect, 0xFF000000);
 		}
 		
-		
 		static public function line(b:BitmapData, x1:Number, y1:Number, x2:Number, y2:Number, color:uint):void
 		{
+			var partial:Number;
+			var delta:Point = new Point(x2 - x1, y2 - y1);
+			var step:Point = new Point;
 			
+			if (delta.x < 0) { delta.x = -delta.x; step.x = -1; } else { step.x = 1; }
+			if (delta.y < 0) { delta.y = -delta.y; step.y = -1; } else { step.y = 1; }
+			
+			delta.x <<= 1;
+			delta.y <<= 1;
+			
+			b.setPixel32(x1, y1, color);
+			
+			if (delta.x > delta.y)
+			{
+				partial = delta.y - (delta.x >> 1);
+				while (x1 != x2)
+				{
+					if (partial >= 0)
+					{
+						y1 += step.y;
+						partial -= delta.x;
+					}
+					x1 += step.x;
+					partial += delta.y;
+					b.setPixel32(x1, y1, color);
+				}
+			}
+			else
+			{
+				partial = delta.x - (delta.y >> 1);
+				while (y1 != y2)
+				{
+					if (partial >= 0)
+					{
+						x1 += step.x;
+						partial -= delta.y;
+					}
+					y1 += step.y;
+					partial += delta.x;
+					b.setPixel32(x1, y1, color);
+				}
+			}
+		}
+		
+		static private function DrawHLine(b:BitmapData, x1:Number, x2:Number, y:Number, color:uint):void
+		{
+			var l:Number = Math.abs(x2 - x1);
+			for (var i:Number = 0; i <= l; i++)
+			{
+				b.setPixel32(x1 + i, y, color);
+			}
+		}
+		
+		static private function DrawVLine(b:BitmapData, y1:Number, y2:Number, x:Number, color:uint):void
+		{
+			var l:Number = Math.abs(y2 - y1);
+			for (var i:Number = 0; i <= l; i++)
+			{
+				b.setPixel32(x, y1 + i, color);
+			}
 		}
 		
 		static public function rect(b:BitmapData, x1:Number, y1:Number, x2:Number, y2:Number, color:uint):void
 		{
-			
+			DrawHLine(b, x1, x2, y1, color);
+			DrawHLine(b, x1, x2, y2, color);
+			DrawVLine(b, y1, y2, x1, color);
+			DrawVLine(b, y1, y2, x2, color);
 		}
 		
+		static public function stretch_blit(source:BitmapData, dest:BitmapData, sourceRect:Rectangle, destRect:Rectangle):void
+		{
+			var scale:Point = new Point(destRect.width / sourceRect.width, destRect.height / sourceRect.height);
+			
+			var matrix:Matrix = new Matrix;
+			matrix.identity();
+			matrix.scale(scale.x, scale.y);
+			matrix.translate(destRect.x, destRect.y);
+			
+			//trace("stretch_blit matrix=",matrix);
+			
+			dest.draw(source, matrix, null, null, null, false);
+		}
 	}
 }
