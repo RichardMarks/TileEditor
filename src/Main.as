@@ -190,8 +190,7 @@ package
 					else if (e.shiftKey) { DoEditorAction(EDITACT_FLIP_IMAGE); }
 				} break;
 				
-				case Key.C: { if (e.ctrlKey) { DoEditorAction(EDITACT_COPY_IMAGE); } } break;
-				case Key.V: { if (e.ctrlKey) { DoEditorAction(EDITACT_PASTE_IMAGE); } } break;
+				
 				
 				case Key.T: { DoEditorAction(EDITACT_TOGGLE_OPAQUE_MODE); } break;
 				case Key.F: { DoEditorAction(EDITACT_FILL_IMAGE); } break;
@@ -211,6 +210,12 @@ package
 		
 		private function OnKeyUp(e:KeyboardEvent):void 
 		{ 
+			switch (e.keyCode)
+			{
+				case Key.C: { if (e.ctrlKey) { DoEditorAction(EDITACT_COPY_IMAGE); } } break;
+				case Key.V: { if (e.ctrlKey) { DoEditorAction(EDITACT_PASTE_IMAGE); } } break;
+				default:break;
+			}
 		}
 		
 		private function OnMouseClick(e:MouseEvent):void 
@@ -692,11 +697,13 @@ package
 		
 		private function EditActCopyImage():void 
 		{
+			trace("copying image to cliboard");
 			clipboardImage.copyPixels(realTileImage, realTileImage.rect, new Point);
 		}
 		
 		private function EditActPasteImage():void 
 		{ 
+			trace("pasting image from cliboard");
 			if (opaqueDrawing)
 			{
 				realTileImage.copyPixels(clipboardImage, clipboardImage.rect, new Point);
