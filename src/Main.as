@@ -2,12 +2,14 @@ package
 {
 	import flash.display.Bitmap;
 	import flash.display.BitmapData;
+	import flash.display.BlendMode;
 	import flash.display.PixelSnapping;
 	import flash.display.Sprite;
 	import flash.events.Event;
 	import flash.events.KeyboardEvent;
 	import flash.events.MouseEvent;
 	import flash.filters.BlurFilter;
+	import flash.geom.Matrix;
 	import flash.geom.Point;
 	import flash.geom.Rectangle;
 	import net.flashpunk.utils.Key;
@@ -128,9 +130,9 @@ package
 			realTileImage = new BitmapData(TILESZ, TILESZ, true, 0xFF000000);
 			tileImage = new BitmapData(tileEditPanelRect.width, tileEditPanelRect.height, true, 0xFF000000);
 			paletteImage = new BitmapData(palettePanelRect.width, palettePanelRect.height, true, 0xFF000000);
-			gridImage = new BitmapData(tileImage.width, tileImage.height, true, 0xFF000000);
+			gridImage = new BitmapData(tileImage.width, tileImage.height, true, 0x00000000);
 			clipboardImage = new BitmapData(TILESZ, TILESZ, true, 0xFF000000);
-			xorPixel = new BitmapData(GRIDRES, GRIDRES, true, 0xFF000000);
+			xorPixel = new BitmapData(GRIDRES, GRIDRES, true, 0x00000000);
 			
 			// draw the xorpixel texture
 			for (var x:Number = 0; x < xorPixel.width; x++)
@@ -143,8 +145,6 @@ package
 			}
 			
 			// draw the panels
-			EditActRandomFillImage();
-			
 			RedrawTheTile(tileImage);
 			RedrawThePalette(paletteImage);
 			RedrawTheGrid(gridImage);
@@ -195,7 +195,7 @@ package
 				
 				case Key.T: { DoEditorAction(EDITACT_TOGGLE_OPAQUE_MODE); } break;
 				case Key.F: { DoEditorAction(EDITACT_FILL_IMAGE); } break;
-				case Key.G: { trace("g key pressed"); DoEditorAction(EDITACT_TOGGLE_GRID); } break;
+				case Key.G: { DoEditorAction(EDITACT_TOGGLE_GRID); } break;
 				case Key.N: { DoEditorAction(EDITACT_CLEAR_IMAGE); } break;
 				case Key.S: { DoEditorAction(EDITACT_SAVE_IMAGE); } break;
 				case Key.L: { DoEditorAction(EDITACT_LOAD_IMAGE); } break;
@@ -289,7 +289,12 @@ package
 			// draw grid
 			if (showGrid)
 			{
-				backBuffer.copyPixels(gridImage, gridImage.rect, new Point(tileEditPanelRect.x, tileEditPanelRect.y));
+				//backBuffer.copyPixels(gridImage, gridImage.rect, new Point(tileEditPanelRect.x, tileEditPanelRect.y));
+				
+				backBuffer.draw(gridImage, 
+					new Matrix(1, 0, 0, 1, tileEditPanelRect.left, tileEditPanelRect.top), 
+					null, BlendMode.NORMAL, null, false);
+				
 			}
 		
 			// draw hud (the frames that go around every panel
