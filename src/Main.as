@@ -237,6 +237,8 @@ package
 			{
 				drawColor = AL.GetPaletteIndex(paletteImage.getPixel32(mouseX - palettePanelRect.x, mouseY - palettePanelRect.y));
 				trace("clicked palette panel, color is", drawColor);
+				RedrawThePalette(paletteImage);
+				renderNeeded = true;
 			}
 			// close button
 			else if (uiCloseButtonRect.contains(mouseX, mouseY))
@@ -308,15 +310,16 @@ package
 			UIDrawFrame(uiTranspButtonRect);
 			UIDrawFrame(uiStatusBarRect);
 			
+			
+			// textprintf_ex(doublebuffer, font, ui_transp_button_rect[0] + 5, ui_transp_button_rect[1] + 5, hud_color, -1, (opaque_drawing==1)?"T":"O");
+			
+			
+			// draw the status bar
+			
+			
 			/*
 		
-		textprintf_ex(doublebuffer, font, ui_transp_button_rect[0] + 5, ui_transp_button_rect[1] + 5, hud_color, -1, (opaque_drawing==1)?"T":"O");
-
 		
-		
-		
-		
-		// draw the status bar
 		{
 			int x = ui_status_bar_rect[0] + 4;
 			int y = ui_status_bar_rect[1] + 4;
@@ -352,9 +355,10 @@ package
 			
 		}
 		
-		
-		rect(doublebuffer, 0, 0, SCREEN_WIDTH-1, SCREEN_HEIGHT-1, hud_color);
 			*/
+		
+			AL.rect(backBuffer, 0, 0, DEFAULT_SCREEN_WIDTH - 1, DEFAULT_SCREEN_HEIGHT - 1, AL.PALETTE256[hudColor]);
+			AL.rect(backBuffer, 1, 1, DEFAULT_SCREEN_WIDTH - 2, DEFAULT_SCREEN_HEIGHT - 2, AL.PALETTE256[hudColor]);
 		}
 		
 		// functions
@@ -407,6 +411,9 @@ package
 			var rect:Rectangle = new Rectangle;
 			var palY:Number = 0;
 			var y:Number = 0;
+			
+			var selRect:Rectangle = rect.clone();
+			
 			for (var n:Number = 0; n < 8; n++)
 			{
 				for (var x:Number = 0; x < 32; x++)
@@ -419,14 +426,19 @@ package
 					rect.height = paletteBlockSize;
 					
 					b.fillRect(rect, color);
-					if (drawColor == color)
+					if (AL.PALETTE256[drawColor] == color)
 					{
-						AL.rect(b, rect.x, y, rect.x + rect.width - 1, rect.height - 1, AL.PALETTE256[0]);
+						selRect = rect.clone();
+						selRect.inflate(1, 1);
 					}
 				}
 				y += paletteBlockSize;
 				palY++;
 			}
+			
+			AL.rect(b, selRect.x, selRect.y, selRect.right, selRect.bottom, AL.PALETTE256[0]);
+			selRect.inflate(-1, -1);
+			AL.rect(b, selRect.x, selRect.y, selRect.right, selRect.bottom, AL.PALETTE256[0]);
 		}
 		
 		private function SynchronizeEditorWithTile():void
