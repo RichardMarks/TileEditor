@@ -50,8 +50,8 @@ package
 		static public const GRIDRES:Number = 16;//64;
 		static public const ZOOM:Number = 4;//6;
 		
-		static public const HUD_OPAQUE_MODE:Number = 4;
-		static public const HUD_TRANSPARENT_MODE:Number = 2;
+		static public const HUD_OPAQUE_MODE:Number = AL.PALETTE256[4];
+		static public const HUD_TRANSPARENT_MODE:Number = AL.PALETTE256[2];
 		static public const EDITACT_DRAW_PIXEL:Number = 0;
 		static public const EDITACT_ERASE_PIXEL:Number = 1;
 		static public const EDITACT_CLEAR_IMAGE:Number = 2;
@@ -102,8 +102,8 @@ package
 		static public var tileData:Vector.<Number> = new Vector.<Number>((TILESZ + (TILESZ * TILESZ)));
 		
 		// misc colors
-		static public var drawColor:Number = 15;
-		static public var gridColor:Number = 15;
+		static public var drawColor:Number = AL.PALETTE256[15];
+		static public var gridColor:Number = AL.PALETTE256[15];
 		static public var hudColor:Number = HUD_OPAQUE_MODE;
 		
 		// mode toggles
@@ -255,7 +255,7 @@ package
 			// color palette panel
 			else if (palettePanelRect.contains(mouseX, mouseY))
 			{
-				drawColor = AL.GetPaletteIndex(paletteImage.getPixel32(mouseX - palettePanelRect.x, mouseY - palettePanelRect.y));
+				drawColor = paletteImage.getPixel32(mouseX - palettePanelRect.x, mouseY - palettePanelRect.y);
 				RedrawThePalette(paletteImage);
 				renderNeeded = true;
 			}
@@ -286,6 +286,7 @@ package
 			
 			// draw zoomed tile
 			AL.stretch_blit(realTileImage, backBuffer, realTileImage.rect, zoomTileRect);
+			
 			
 			// draw edited tile
 			backBuffer.copyPixels(tileImage, tileImage.rect, new Point(tileEditPanelRect.x, tileEditPanelRect.y));
@@ -359,8 +360,8 @@ package
 		
 			*/
 		
-			AL.rect(backBuffer, 0, 0, DEFAULT_SCREEN_WIDTH - 1, DEFAULT_SCREEN_HEIGHT - 1, AL.PALETTE256[hudColor]);
-			AL.rect(backBuffer, 1, 1, DEFAULT_SCREEN_WIDTH - 2, DEFAULT_SCREEN_HEIGHT - 2, AL.PALETTE256[hudColor]);
+			AL.rect(backBuffer, 0, 0, DEFAULT_SCREEN_WIDTH - 1, DEFAULT_SCREEN_HEIGHT - 1, hudColor);
+			AL.rect(backBuffer, 1, 1, DEFAULT_SCREEN_WIDTH - 2, DEFAULT_SCREEN_HEIGHT - 2, hudColor);
 		}
 		
 		// functions
@@ -379,11 +380,10 @@ package
 		
 		private function RedrawTheGrid(b:BitmapData):void
 		{
-			var color:uint = AL.PALETTE256[gridColor];
 			for (var i:Number = 0; i < TILESZ; i++)
 			{
-				AL.line(b, 0, i * GRIDRES, b.width, i * GRIDRES, color);
-				AL.line(b, i * GRIDRES, 0, i * GRIDRES, b.height, color);
+				AL.line(b, 0, i * GRIDRES, b.width, i * GRIDRES, gridColor);
+				AL.line(b, i * GRIDRES, 0, i * GRIDRES, b.height, gridColor);
 			}
 		}
 		
@@ -399,8 +399,8 @@ package
 				{
 					rect.x = x * GRIDRES;
 					var pixelColor:Number = GetTileData(x, y);
-					b.fillRect(rect, AL.PALETTE256[pixelColor]);
-					if (!opaqueDrawing && pixelColor == 0)
+					b.fillRect(rect, pixelColor);
+					if (!opaqueDrawing && pixelColor == AL.PALETTE256[0])
 					{
 						b.copyPixels(xorPixel, xorPixel.rect, new Point(rect.x, rect.y));
 					}
@@ -414,7 +414,7 @@ package
 			var palY:Number = 0;
 			var y:Number = 0;
 			
-			var selRect:Rectangle = rect.clone();
+			var selRect:Rectangle = null;
 			
 			for (var n:Number = 0; n < 8; n++)
 			{
@@ -428,7 +428,7 @@ package
 					rect.height = paletteBlockSize;
 					
 					b.fillRect(rect, color);
-					if (AL.PALETTE256[drawColor] == color)
+					if (drawColor == color)
 					{
 						selRect = rect.clone();
 						selRect.inflate(1, 1);
@@ -438,9 +438,12 @@ package
 				palY++;
 			}
 			
-			AL.rect(b, selRect.x, selRect.y, selRect.right, selRect.bottom, AL.PALETTE256[0]);
-			selRect.inflate(-1, -1);
-			AL.rect(b, selRect.x, selRect.y, selRect.right, selRect.bottom, AL.PALETTE256[0]);
+			if (selRect)
+			{
+				AL.rect(b, selRect.x, selRect.y, selRect.right, selRect.bottom, AL.PALETTE256[0]);
+				selRect.inflate(-1, -1);
+				AL.rect(b, selRect.x, selRect.y, selRect.right, selRect.bottom, AL.PALETTE256[0]);
+			}
 		}
 		
 		private function SynchronizeEditorWithTile():void
@@ -449,7 +452,7 @@ package
 			{
 				for (var x:Number = 0; x < realTileImage.width; x++)
 				{
-					var pixelColor:uint = AL.GetPaletteIndex(realTileImage.getPixel32(x, y));
+					var pixelColor:uint = realTileImage.getPixel32(x, y);
 					SetTileData(x, y, pixelColor);
 				}
 			}
@@ -584,7 +587,7 @@ package
 			
 			SetTileData(mx, my, drawColor);
 			RedrawTheTile(tileImage);
-			realTileImage.setPixel32(mx, my, AL.PALETTE256[drawColor]);
+			realTileImage.setPixel32(mx, my, drawColor);
 			//SynchronizeEditorWithTile();
 		}
 		
@@ -594,20 +597,20 @@ package
 			var mouseY:Number = stage.mouseY - tileEditPanelRect.top;
 			var mx:Number = int(mouseX / GRIDRES);
 			var my:Number = int(mouseY / GRIDRES);
-			SetTileData(mx, my, 0);
+			SetTileData(mx, my, AL.PALETTE256[0]);
 			RedrawTheTile(tileImage);
 			realTileImage.setPixel32(mx, my, AL.PALETTE256[0]);
 		}
 		
 		private function EditActClearImage():void 
 		{ 
-			realTileImage.fillRect(realTileImage.rect, 0xFF000000);
+			realTileImage.fillRect(realTileImage.rect, AL.PALETTE256[0]);
 			SynchronizeEditorWithTile();
 		}
 		
 		private function EditActFillImage():void 
 		{ 
-			realTileImage.fillRect(realTileImage.rect, AL.PALETTE256[drawColor]);
+			realTileImage.fillRect(realTileImage.rect, drawColor);
 			SynchronizeEditorWithTile();
 		}
 		
@@ -772,7 +775,7 @@ package
 			{
 				var px:Number = Math.random() * TILESZ;
 				var py:Number = Math.random() * TILESZ;
-				realTileImage.setPixel32(px, py, AL.PALETTE256[drawColor]);
+				realTileImage.setPixel32(px, py, drawColor);
 			}
 			
 			SynchronizeEditorWithTile();
