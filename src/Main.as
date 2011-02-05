@@ -46,9 +46,9 @@ package
 		
 		static public const DEFAULT_ZOOM_LEVEL:Number = 4;
 		
-		static public const TILESZ:Number = 8;
-		static public const GRIDRES:Number = 64;
-		static public const ZOOM:Number = 6;
+		static public const TILESZ:Number = 32;//8;
+		static public const GRIDRES:Number = 16;//64;
+		static public const ZOOM:Number = 4;//6;
 		
 		static public const HUD_OPAQUE_MODE:Number = 4;
 		static public const HUD_TRANSPARENT_MODE:Number = 2;
@@ -113,6 +113,8 @@ package
 		// cpu saver
 		private var renderNeeded:Boolean = true;
 		
+		// fluid drawing
+		private var penOn:Boolean = false;
 		
 		public function Main():void 
 		{
@@ -155,7 +157,25 @@ package
 			stage.addEventListener(KeyboardEvent.KEY_UP, OnKeyUp);
 			stage.addEventListener(MouseEvent.CLICK, OnMouseClick);
 			
+			stage.addEventListener(MouseEvent.MOUSE_MOVE, OnMouseMove);
+			
 			addChild(new Bitmap(backBuffer, PixelSnapping.NEVER));
+		}
+		
+		private function OnMouseMove(e:MouseEvent):void
+		{
+			var mouseX:Number = e.stageX;
+			var mouseY:Number = e.stageY;
+			
+			if (e.buttonDown)
+			{
+				// tile editor panel
+				if (tileEditPanelRect.contains(mouseX, mouseY))
+				{
+					if (e.altKey) { DoEditorAction(EDITACT_ERASE_PIXEL); }
+					else { DoEditorAction(EDITACT_DRAW_PIXEL); }
+				}
+			}
 		}
 		
 		private function OnKeyDown(e:KeyboardEvent):void 
@@ -220,7 +240,7 @@ package
 		
 		private function OnMouseClick(e:MouseEvent):void 
 		{ 
-			trace("mouse click at", e.stageX, ",", e.stageY);
+			//trace("mouse click at", e.stageX, ",", e.stageY);
 			
 			// handle mouse input
 			var mouseX:Number = e.stageX;
@@ -229,19 +249,13 @@ package
 			// tile editor panel
 			if (tileEditPanelRect.contains(mouseX, mouseY))
 			{
-				trace("clicked tile edit panel");
 				if (e.altKey) { DoEditorAction(EDITACT_ERASE_PIXEL); }
-				else 
-				{ 
-					DoEditorAction(EDITACT_DRAW_PIXEL); 
-					trace("draw pixel");
-				}
+				else { DoEditorAction(EDITACT_DRAW_PIXEL); }
 			}
 			// color palette panel
 			else if (palettePanelRect.contains(mouseX, mouseY))
 			{
 				drawColor = AL.GetPaletteIndex(paletteImage.getPixel32(mouseX - palettePanelRect.x, mouseY - palettePanelRect.y));
-				trace("clicked palette panel, color is", drawColor);
 				RedrawThePalette(paletteImage);
 				renderNeeded = true;
 			}
@@ -267,41 +281,24 @@ package
 			
 			// render
 			
-			//AL.clear_bitmap(backBuffer);
-			
 			// draw clipboard buffer
-			//backBuffer.copyPixels(clipboardImage, clipboardImage.rect, new Point(clipboardTileRect.x, clipboardTileRect.y));
-			
 			AL.stretch_blit(clipboardImage, backBuffer, clipboardImage.rect, clipboardTileRect);
 			
-			//stretch_blit(clipboardimage, doublebuffer, 0, 0, clipboardimage->w, clipboardimage->h, clipboard_tile_rect[0], clipboard_tile_rect[1], clipboard_tile_rect[4], clipboard_tile_rect[5]);
-		
-			
 			// draw zoomed tile
-			
-			//backBuffer.copyPixels(realTileImage, realTileImage.rect, new Point(zoomTileRect.x, zoomTileRect.y));
-			
 			AL.stretch_blit(realTileImage, backBuffer, realTileImage.rect, zoomTileRect);
 			
-			// stretch_blit(realtileimage, doublebuffer, 0, 0, realtileimage->w, realtileimage->h, zoom_tile_rect[0], zoom_tile_rect[1], zoom_tile_rect[4], zoom_tile_rect[5]);
-		
 			// draw edited tile
 			backBuffer.copyPixels(tileImage, tileImage.rect, new Point(tileEditPanelRect.x, tileEditPanelRect.y));
-			//blit(tileimage, doublebuffer, 0, 0, tile_edit_panel_rect[0], tile_edit_panel_rect[1], tileimage->w, tileimage->h);
-		
+			
 			// draw palette
 			backBuffer.copyPixels(paletteImage, paletteImage.rect, new Point(palettePanelRect.x, palettePanelRect.y));
-			//blit(paletteimage, doublebuffer, 0, 0, palette_panel_rect[0], palette_panel_rect[1], paletteimage->w, paletteimage->h);
-		
+			
 			// draw grid
 			if (showGrid)
 			{
-				//backBuffer.copyPixels(gridImage, gridImage.rect, new Point(tileEditPanelRect.x, tileEditPanelRect.y));
-				
 				backBuffer.draw(gridImage, 
 					new Matrix(1, 0, 0, 1, tileEditPanelRect.left, tileEditPanelRect.top), 
 					null, BlendMode.NORMAL, null, false);
-				
 			}
 		
 			// draw hud (the frames that go around every panel
